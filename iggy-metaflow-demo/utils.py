@@ -79,6 +79,7 @@ def train(X_train, y_train, X_val, y_val) -> RandomForestRegressor:
     print(f"BEST TRAINING RESULT: val_loss={best_val} (max_depth={best_depth})")
     return best_model
 
+
 def train_mlp(X_train, y_train, X_val, y_val) -> MLPRegressor:
     """Train simple MLP model"""
     hidden_layer_sizes = [(10, 5), (8, 4)] # e.g., (10, 8, 6)
@@ -104,25 +105,6 @@ def train_mlp(X_train, y_train, X_val, y_val) -> MLPRegressor:
                 best_model = model
     print(f"BEST TRAINING RESULT: val_loss={best_val} (hidden_layer_sizes={best_hidden_layer_sizes}, batch_size={best_batch_size})")
     return best_model
-
-# def train_mlp(X_train, y_train, X_val, y_val) -> MLPRegressor:
-#     """Train simple MLP model"""
-#     hls = [(30, 10), (10, 5), (8, 4)] # (10, 8, 6) is promising?
-#     best_val = 1e6
-#     best_hls = (-1,)
-#     best_model = None
-#     for hl in hls:
-#         model = MLPRegressor(random_state=123, hidden_layer_sizes=hl)
-#         model.fit(X_train, y_train)
-#         y_hat = model.predict(X_val)
-#         val_mse = np.mean((y_val - y_hat) ** 2)
-#         print(f"TRAINING RESULT: val_loss={val_mse} (hidden_layer_sizes={hl})")
-#         if val_mse < best_val:
-#             best_val = val_mse
-#             best_hls = hl
-#             best_model = model
-#     print(f"BEST TRAINING RESULT: val_loss={best_val} (hidden_layer_sizes={best_hls})")
-#     return best_model
 
 
 def eval(
