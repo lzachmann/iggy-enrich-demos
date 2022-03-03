@@ -127,3 +127,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Fork
+visualization/**
+!visualization/iggy-kepler-viz.ipynb
+get-started.sh
+iggy-data/**
+!iggy-data/.gitkeep
+docker
+iggy-metaflow-demo/**
+!iggy-metaflow-demo/*.py
+!iggy-metaflow-demo/README.md
+!iggy-metaflow-demo/requirements.txt
+.DS_Store

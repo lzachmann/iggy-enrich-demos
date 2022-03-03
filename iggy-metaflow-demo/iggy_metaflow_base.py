@@ -115,6 +115,11 @@ class IggyFlow:
 
         return train(X_train, y_train, X_val, y_val)
 
+    def train_mlp(self, X_train, y_train, X_val, y_val):
+        from utils import train_mlp
+
+        return train_mlp(X_train, y_train, X_val, y_val)
+
     def iggy_enrich(self, X_train, y_train, X_val, y_val, X_test, y_test):
         from iggyenrich.iggy_enrich import IggyEnrich
         from iggyenrich.iggy_data_package import LocalIggyDataPackage
@@ -154,3 +159,8 @@ class IggyFlow:
         from utils import segment_df
 
         return segment_df(x, y, col)
+
+    def regress_obs_vs_pred(self, model, X_test, y_test, file_path, auto_open):
+        from plot import regress_obs_vs_pred
+
+        return regress_obs_vs_pred(model, X_test, y_test, file_path, auto_open)

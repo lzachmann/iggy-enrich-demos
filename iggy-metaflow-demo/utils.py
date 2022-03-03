@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple
 from sklearn.impute import KNNImputer
 from sklearn.feature_selection import SelectKBest, mutual_info_regression
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.neural_network import MLPRegressor
 
 
 pd.options.mode.chained_assignment = None
@@ -77,6 +78,51 @@ def train(X_train, y_train, X_val, y_val) -> RandomForestRegressor:
             best_model = model
     print(f"BEST TRAINING RESULT: val_loss={best_val} (max_depth={best_depth})")
     return best_model
+
+def train_mlp(X_train, y_train, X_val, y_val) -> MLPRegressor:
+    """Train simple MLP model"""
+    hidden_layer_sizes = [(10, 5), (8, 4)] # e.g., (10, 8, 6)
+    batch_size = [50, 100, 150] # batch_size
+    best_val = 1e6
+    best_hidden_layer_sizes = -1
+    best_batch_size = -1
+    best_model = None
+    for hls in hidden_layer_sizes:
+        for bs in batch_size:
+            model = MLPRegressor(
+                random_state=123, hidden_layer_sizes=hls, batch_size=bs, 
+                learning_rate="adaptive", solver="sgd"
+                )
+            model.fit(X_train, y_train)
+            y_hat = model.predict(X_val)
+            val_mse = np.mean((y_val - y_hat) ** 2)
+            print(f"TRAINING RESULT: val_loss={val_mse} (hidden_layer_sizes={hls}, batch_size={bs})")
+            if val_mse < best_val:
+                best_val = val_mse
+                best_hidden_layer_sizes = hls
+                best_batch_size = bs
+                best_model = model
+    print(f"BEST TRAINING RESULT: val_loss={best_val} (hidden_layer_sizes={best_hidden_layer_sizes}, batch_size={best_batch_size})")
+    return best_model
+
+# def train_mlp(X_train, y_train, X_val, y_val) -> MLPRegressor:
+#     """Train simple MLP model"""
+#     hls = [(30, 10), (10, 5), (8, 4)] # (10, 8, 6) is promising?
+#     best_val = 1e6
+#     best_hls = (-1,)
+#     best_model = None
+#     for hl in hls:
+#         model = MLPRegressor(random_state=123, hidden_layer_sizes=hl)
+#         model.fit(X_train, y_train)
+#         y_hat = model.predict(X_val)
+#         val_mse = np.mean((y_val - y_hat) ** 2)
+#         print(f"TRAINING RESULT: val_loss={val_mse} (hidden_layer_sizes={hl})")
+#         if val_mse < best_val:
+#             best_val = val_mse
+#             best_hls = hl
+#             best_model = model
+#     print(f"BEST TRAINING RESULT: val_loss={best_val} (hidden_layer_sizes={best_hls})")
+#     return best_model
 
 
 def eval(
