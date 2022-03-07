@@ -101,12 +101,15 @@ class IggyFlow:
             scaled_features,
         )
 
-    def select_features(self, X_train, y_train, X_val, y_val, X_test, y_test):
+    def select_features(self, X_train, y_train, X_val, y_val, X_test, y_test, append_features=None):
         # feature selection
         from utils import feature_selection
 
+        if append_features is None: 
+            append_features = []
+
         (X_train, X_val, X_test), selected_features = feature_selection(
-            [X_train, X_val, X_test], y_train, self.model_dim
+            [X_train, X_val, X_test], y_train, self.model_dim, append_features
         )
         return (X_train, X_val, X_test), selected_features
 
@@ -160,7 +163,7 @@ class IggyFlow:
 
         return segment_df(x, y, col)
 
-    def regress_obs_vs_pred(self, model, X_test, y_test, file_path, auto_open):
+    def regress_obs_vs_pred(self, model, X_test, y_test, file_path, auto_open, mean=None, std=None):
         from plot import regress_obs_vs_pred
 
-        return regress_obs_vs_pred(model, X_test, y_test, file_path, auto_open)
+        return regress_obs_vs_pred(model, X_test, y_test, file_path, auto_open, mean, std)

@@ -1,5 +1,7 @@
 from iggy_metaflow_base import IggyFlow, LoadedDataset
 from metaflow import FlowSpec, step, catch
+import matplotlib.pyplot as plt
+import pandas as pd
 
 
 class IggyPerDistrictFlowMLP(FlowSpec, IggyFlow):
@@ -85,41 +87,41 @@ class IggyPerDistrictFlowMLP(FlowSpec, IggyFlow):
 
         # eval
         mean, std = self.scaled_features[self.label_col]
-        result = self.eval(self.model, X_test, y_test, mean, std)
+        self.eval_result = self.eval(self.model, X_test, y_test, mean, std)
         print(f"** Results for tax district {tax_dst} **")
-        print(result)
+        print(self.eval_result)
 
         # Observed vs Predicted values plot
         self.regress_obs_vs_pred(
             self.model, X_test, y_test,
-            f"op/op_{self.file_prefix}_{tax_dst}.png",
+            f"op/{self.file_prefix}/{tax_dst}/op_scaled_transformed.png",
             False
         )
-        print(f"See op/op_{self.file_prefix}_{tax_dst}.png")
+        self.regress_obs_vs_pred(
+            self.model, X_test, y_test,
+            f"op/{self.file_prefix}/{tax_dst}/op_unscaled_untransformed.png",
+            False, mean, std
+        )
 
-        # # get feature importances
-        # feature_impts = dict(zip(selected_features, self.model.feature_importances_))
-        # self.feature_importance = feature_impts
+        # Cache stats
+        stats = pd.DataFrame(self.eval_result, index=[0])
+        stats.to_csv(f"op/{self.file_prefix}/{tax_dst}/stats.csv", index=False)
+
+        # Visualize loss
+        # print(self.model.score(X_train, y_train))
+        plt.plot(self.model.loss_curve_)
+        try:
+            plt.plot(self.model.validation_scores_)
+        except:
+            print("Validation scores not available...")
+        plt.savefig(f"op/{self.file_prefix}/{tax_dst}/loss.png")
+
         self.next(self.join)
 
     @step
     def join(self, inputs):
         import pandas as pd
         from metaflow import S3
-
-        # feature_impt_by_tax = {}
-        # # Collecting all results at once place.
-        # for inp in inputs:
-        #     # If there was an exception don't write anything.
-        #     if inp.exception:
-        #         continue
-        #     feature_impt_by_tax[inp.tax_district] = inp.feature_importance
-        # fw = pd.DataFrame.from_dict(feature_impt_by_tax, orient="index")
-        # fw = fw.fillna(0)
-        # fw.reset_index(inplace=True)
-        # csv_path = "feature_importances/feature_importances_perdistrict.csv"
-        # fw.to_csv(csv_path, index=False)
-        # self.results = fw
         self.next(self.end)
 
     @step

@@ -45,18 +45,23 @@ def segment_df(df_X: pd.DataFrame, df_y: pd.Series, column_prefix: str) -> Dict:
 
 
 def feature_selection(
-    dfs: List[pd.DataFrame], y: pd.Series, model_dim: int
+    dfs: List[pd.DataFrame], 
+    y: pd.Series, 
+    model_dim: int, 
+    append_features: List[str] = []
 ) -> Tuple[Tuple[pd.DataFrame], Tuple[str]]:
     """Select best features using first df in `dfs` and `y` as training, and return
     transformed features from all dfs
     """
     feature_selector = SelectKBest(mutual_info_regression, k=model_dim)
     feature_selector.fit(dfs[0], y)
-    feature_names = feature_selector.get_feature_names_out(dfs[0].columns)
-    transformed_dfs = [
-        pd.DataFrame(feature_selector.transform(df), columns=feature_names)
-        for df in dfs
-    ]
+    mask = feature_selector.get_support()
+    feature_names = list(dfs[0].columns[mask])
+    feature_names.extend(append_features)
+    print(f"Using {len(feature_names)} features...")
+    # TODO: drop duplicate columns if they exist (maybe with `list(dict.fromkeys(t))`),
+    # and reduce model_dim by len(append_features)?
+    transformed_dfs = [df[feature_names] for df in dfs]
     return tuple(transformed_dfs), feature_names
 
 
@@ -82,28 +87,37 @@ def train(X_train, y_train, X_val, y_val) -> RandomForestRegressor:
 
 def train_mlp(X_train, y_train, X_val, y_val) -> MLPRegressor:
     """Train simple MLP model"""
-    hidden_layer_sizes = [(10, 5), (8, 4)] # e.g., (10, 8, 6)
-    batch_size = [50, 100, 150] # batch_size
+    hidden_layer_sizes = [(40, 20), (20, 10), (10, 5), (8, 4), (6, 3)] # old_hld: (20, 10), (10, 5), (8, 4)
+    batch_size = [25, 50, 100, 150]
+    activation = ["relu"] # ["logistic", "tanh", "relu"]
     best_val = 1e6
-    best_hidden_layer_sizes = -1
-    best_batch_size = -1
+    best_hidden_layer_sizes, best_activation, best_batch_size = -1, -1, -1
     best_model = None
     for hls in hidden_layer_sizes:
-        for bs in batch_size:
-            model = MLPRegressor(
-                random_state=123, hidden_layer_sizes=hls, batch_size=bs, 
-                learning_rate="adaptive", solver="sgd"
-                )
-            model.fit(X_train, y_train)
-            y_hat = model.predict(X_val)
-            val_mse = np.mean((y_val - y_hat) ** 2)
-            print(f"TRAINING RESULT: val_loss={val_mse} (hidden_layer_sizes={hls}, batch_size={bs})")
-            if val_mse < best_val:
-                best_val = val_mse
-                best_hidden_layer_sizes = hls
-                best_batch_size = bs
-                best_model = model
-    print(f"BEST TRAINING RESULT: val_loss={best_val} (hidden_layer_sizes={best_hidden_layer_sizes}, batch_size={best_batch_size})")
+        for a in activation:
+            for bs in batch_size:
+                model = MLPRegressor(
+                    random_state=123, 
+                    hidden_layer_sizes=hls, 
+                    activation = a,
+                    solver="sgd",
+                    batch_size=bs, 
+                    learning_rate="adaptive",
+                    max_iter=3000, 
+                    early_stopping=True,
+                    # validation_fraction=0.2
+                    )
+                model.fit(X_train, y_train)
+                y_hat = model.predict(X_val)
+                val_mse = np.mean((y_val - y_hat) ** 2)
+                print(f"TRAINING RESULT: val_loss={val_mse}\n(hidden_layer_sizes={hls}, activation={a}, batch_size={bs})")
+                if val_mse < best_val:
+                    best_val = val_mse
+                    best_hidden_layer_sizes = hls
+                    best_activation = a
+                    best_batch_size = bs
+                    best_model = model
+    print(f"BEST TRAINING RESULT: val_loss={best_val}\n(hidden_layer_sizes={best_hidden_layer_sizes}, activation={best_activation}, batch_size={best_batch_size})")
     return best_model
 
 
@@ -123,6 +137,7 @@ def eval(
         y_actuals = y_test * scaled_std + scaled_mean
         y_preds = y_hat * scaled_std + scaled_mean
         result["test_unscaled_mae"] = np.abs(y_preds - y_actuals).mean()
+        result["test_unscaled_mae_no_log"] = np.abs(10**y_preds - 10**y_actuals).mean()
 
     return result
 

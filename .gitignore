@@ -140,3 +140,5 @@ iggy-metaflow-demo/**
 !iggy-metaflow-demo/README.md
 !iggy-metaflow-demo/requirements.txt
 .DS_Store
+iggy-metaflow-demo/debug.*
+resids.R

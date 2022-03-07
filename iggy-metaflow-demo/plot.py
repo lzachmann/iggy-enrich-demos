@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from typing import Dict
+from typing import Dict, Optional
 import plotly.graph_objects as go
 import plotly
 from sklearn.neural_network import MLPRegressor
@@ -15,8 +15,12 @@ def regress_obs_vs_pred(
     y_test: np.array,
     file_path: str,
     auto_open: bool = False,
+    scaled_mean: Optional[float] = None,
+    scaled_std: Optional[float] = None,
 ) -> Dict:
+
     """Create observed vs. predicted plot"""
+
     y_hat = model.predict(X_test)
     dirname = os.path.dirname(file_path)
     Path(dirname).mkdir(parents=True, exist_ok=True)
@@ -24,8 +28,19 @@ def regress_obs_vs_pred(
         idx = random.sample(range(len(y_test)), 1_000)
     else:
         idx = list(range(len(y_test)))
-    x = y_hat.iloc[idx] if isinstance(y_hat, pd.Series) else y_hat[idx]
-    y = y_test.iloc[idx] if isinstance(y_test, pd.Series) else y_test[idx]
+    x_raw = y_hat.iloc[idx] if isinstance(y_hat, pd.Series) else y_hat[idx]
+    y_raw = y_test.iloc[idx] if isinstance(y_test, pd.Series) else y_test[idx]
+
+    # Conditionally unscale and untransform the y's
+    if scaled_mean:
+        x_unscaled = x_raw * scaled_std + scaled_mean
+        y_unscaled = y_raw * scaled_std + scaled_mean
+        x = 10**x_unscaled
+        y = 10**y_unscaled
+    else:
+        x = x_raw
+        y = y_raw
+
     plot_range = [np.min((x, y)), np.max((x, y))]
     fig = go.Figure()
     fig.add_trace(
@@ -50,4 +65,5 @@ def regress_obs_vs_pred(
     )
     fig.write_image(file_path)
     plotly.offline.plot(fig, filename=file_path, auto_open=auto_open)
+
     return fig
