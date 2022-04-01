@@ -134,7 +134,6 @@ visualization/**
 get-started.sh
 iggy-data/**
 !iggy-data/.gitkeep
-docker
 iggy-metaflow-demo/**
 !iggy-metaflow-demo/*.py
 !iggy-metaflow-demo/README.md

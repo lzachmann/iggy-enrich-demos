@@ -10,4 +10,4 @@ s3fs==2022.1.0
 metaflow==2.4.8
 keplergl==0.3.2
 plotly==5.6.0
-kaleido==0.2.1.post1
+kaleido==0.2.1
